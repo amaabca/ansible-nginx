@@ -1,2 +1,33 @@
 ---
-# tasks file for ansible-nginx
+- name: Install Nginx
+  apt: pkg=nginx-full state=present force=yes
+
+- name: Create vhost
+  template: src={{ nginx_template_path }} dest=/etc/nginx/sites-available/{{ app_name }} owner=root group=root mode=0644
+  notify:
+    - restart nginx
+
+- file: src=/etc/nginx/sites-available/{{ app_name }} dest=/etc/nginx/sites-enabled/{{ app_name }} state=link
+
+- copy: content="{{ ssl_certificate }}" dest=/etc/ssl/certs/server.crt owner=root group=root mode=0644
+  notify:
+    - restart nginx
+
+- name: Create SSL vhost
+  copy: content="{{ ssl_private_key }}" dest=/etc/ssl/private/server.key owner=root group=root mode=0644
+  notify:
+    - restart nginx
+
+- stat: path={{ app_name }}.ssl
+  register: app_ssl_path
+
+- template: src={{ app_name }}.ssl dest=/etc/nginx/sites-available/{{ app_name }}.ssl owner=root group=root mode=0755
+  when: app_ssl_path.stat.exists == true
+
+- file: src=/etc/nginx/sites-available/{{ app_name }}.ssl dest=/etc/nginx/sites-enabled/{{ app_name }}.ssl state=link
+  when: app_ssl_path.stat.exists == true
+
+- name: Remove default Nginx virtual host
+  file: path=/etc/nginx/sites-enabled/default state=absent
+  notify:
+    - restart nginx
