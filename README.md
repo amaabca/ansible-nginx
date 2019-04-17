@@ -1,7 +1,7 @@
 Ansible-Nginx
 =============
 
-This role sets up an nginx web server on ubuntu 16.04 with SSL.
+This role sets up an nginx web server on Ubuntu with SSL.
 
 Role Variables
 --------------
